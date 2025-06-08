@@ -12,9 +12,12 @@ object GameSettings {
   var enemyHP: Int = 3
   var enemyDamage: Int = 1
   var enemySpeed: Float = 1f
-  var enemySize: Float = 20f
-  var enemyLimit: Int = 20
+  var enemySize: Float = 30f
+  var enemyLimit: Int = 10
   var enemySpawnMinDistance: Float = 800f
+
+  var repelFromPlayerRadius: Float = 200f
+  var repelFromPlayerStrength: Float = 20f
 
   var projectileCooldown: Float = 0.5f
   var projectileSpeed: Float = 6f

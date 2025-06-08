@@ -3,6 +3,9 @@ package ch.hevs.gdx2d.hello
 import ch.hevs.gdx2d.desktop.PortableApplication
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.maps.tiled.{TiledMap, TmxMapLoader}
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.{MathUtils, Vector2}
 
 import scala.util.Random
@@ -10,14 +13,27 @@ import scala.collection.mutable.ArrayBuffer
 
 class Game extends PortableApplication(GameSettings.width, GameSettings.height) {
 
-  val player = new Player(new Vector2(GameSettings.width / 2, GameSettings.height / 2))
-  val enemies = new ArrayBuffer[Enemy]()
-  val projectiles = new ArrayBuffer[Projectile]()
-  val random = new Random()
-  var gameOver = false
+  var player: Player = _
+  val enemies: ArrayBuffer[Enemy] = new ArrayBuffer[Enemy]()
+  val projectiles: ArrayBuffer[Projectile] = new ArrayBuffer[Projectile]()
+  val random: Random = new Random()
+  var gameOver: Boolean = false
+
+  var map: TiledMap = _
+  var mapRenderer: OrthogonalTiledMapRenderer = _
+  var camera: OrthographicCamera = _
+
 
   override def onInit(): Unit = {
     setTitle("Mystis")
+
+    camera = new OrthographicCamera()
+    camera.setToOrtho(false, GameSettings.width, GameSettings.height)
+    //camera.zoom = 4.0f
+    map = new TmxMapLoader().load("maps/map.tmx")
+    mapRenderer = new OrthogonalTiledMapRenderer(map, 0.3f)
+
+    player = new Player(new Vector2(GameSettings.width / 2, GameSettings.height / 2))
     for (_ <- 0 until GameSettings.enemyLimit) {
       enemies.append(new Enemy(randomEnemyPosition()))
     }
@@ -43,19 +59,21 @@ class Game extends PortableApplication(GameSettings.width, GameSettings.height) 
 
   override def onGraphicRender(g: GdxGraphics): Unit = {
     g.clear()
+    camera.update()
+    mapRenderer.setView(camera)
+    mapRenderer.render()
 
     if (!gameOver) {
-      player.update()
 
       var playerTouched = false
-
       val deltaTime = Gdx.graphics.getDeltaTime
+      player.update(deltaTime)
       player.updateShootTimer(deltaTime)
 
       val nearestEnemyToShoot = enemies.minByOption(_.getCenter.dst(player.getCenter))
       nearestEnemyToShoot.foreach { enemy =>
         val distance = enemy.getCenter.dst(player.getCenter)
-        if (distance <= GameSettings.projectileShootRange && player.canShoot) {
+        if (distance <= GameSettings.projectileShootRange && player.canShoot && enemy.state == "alive") {
           val direction = enemy.getCenter.cpy().sub(player.getCenter).nor()
           val projectile = new Projectile(player.getCenter.cpy(), direction.scl(GameSettings.projectileSpeed))
           projectiles.append(projectile)
@@ -77,25 +95,22 @@ class Game extends PortableApplication(GameSettings.width, GameSettings.height) 
       projectiles --= deadProjectiles
 
       for (e <- enemies) {
-        e.update(player.getCenter)
+        e.update(player.getCenter, deltaTime)
         if (e.isCollidingWith(player)) {
           playerTouched = true
         }
       }
 
-      val deadEnemies = enemies.filter(_.isDead)
+      val deadEnemies = enemies.filter(e => e.state == "dead")
       for (e <- deadEnemies) {
         enemies -= e
         val newEnemy = createEnemyAwayFromPlayer(player.getCenter)
         enemies.append(newEnemy)
       }
 
-
       if (playerTouched) {
-        val radius = 200f
-        val strength = 80f
         for (e <- enemies) {
-          e.repelFromPlayer(player.getCenter, radius, strength)
+          e.repelFromPlayer(player.getCenter)
         }
       }
 
@@ -105,9 +120,7 @@ class Game extends PortableApplication(GameSettings.width, GameSettings.height) 
             e.repelFromEachOther(other.getCenter, 1.5f)
           }
         }
-        if (e.isCollidingWith(player)) {
-          e.repelFromEachOther(player.getCenter, 2f)
-        }
+
         e.draw(g)
       }
     }
