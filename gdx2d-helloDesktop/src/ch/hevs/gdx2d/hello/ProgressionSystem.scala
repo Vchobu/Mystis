@@ -5,12 +5,12 @@ import com.badlogic.gdx.graphics.Color
 
 case class BonusCard(name: String, bonusType: String, value: Float) {
   def description: String = bonusType match {
-    case "damage" => s"+${(value * 100).toInt}% dégâts"
+    case "damage" => s"+${(value * 100).toInt}% damage"
     case "speed" => s"+${(value * 100).toInt}% vitesse"
     case "health" => s"+${value.toInt} points de vie"
     case "crit" => s"+${(value * 100).toInt}% chance de critique"
-    case "regen" => s"+${value} régénération par seconde"
-    case _ => "Bonus mystérieux"
+    case "regen" => s"+${value} regeneration per second"
+    case _ => "Mysterious bonus"
   }
 }
 
@@ -49,23 +49,23 @@ class ProgressionSystem {
     ultimateCharges += 1
     xpToNextLevel = (xpToNextLevel * xpMultiplier).toFloat
     triggerLevelUpRewards()
-    println(s"Level Up! Nouveau niveau: $currentLevel")
+    println(s"Level Up! New level: $currentLevel")
   }
 
   private def triggerLevelUpRewards(): Unit = {
     currentBonusCards = generateBonusCards(3)
     isLevelUpPaused = true
-    println("LEVEL UP! Choisissez votre bonus (touches 1, 2, ou 3)")
+    println("LEVEL UP! Choose your bonus (keys 1, 2, or 3)")
   }
 
   private def generateBonusCards(count: Int): List[BonusCard] = {
     val availableBonuses = List(
-      BonusCard("Dégâts +10%", "damage", 0.1f),
+      BonusCard("Damage +10%", "damage", 0.1f),
       BonusCard("Vitesse d'Attaque +15%", "speed", 0.15f),
       BonusCard("Vie Maximum +20", "health", 20.0f),
       BonusCard("Chance Critique +5%", "crit", 0.05f),
-      BonusCard("Régénération +2/s", "regen", 2.0f),
-      BonusCard("Portée +20%", "range", 0.2f),
+      BonusCard("Regeneration +2/s", "regen", 2.0f),
+      BonusCard("Range +20%", "range", 0.2f),
       BonusCard("Vitesse Projectile +25%", "projectileSpeed", 0.25f),
       BonusCard("Double Tir", "multiShot", 1.0f)
     )
@@ -82,7 +82,7 @@ class ProgressionSystem {
       applyBonusCard(chosenCard)
       isLevelUpPaused = false
       currentBonusCards = List.empty
-      println(s"Bonus choisi: ${chosenCard.name}")
+      println(s"Bonus chosen: ${chosenCard.name}")
     }
   }
 
@@ -90,30 +90,30 @@ class ProgressionSystem {
     card.bonusType match {
       case "damage" => 
         GameSettings.playerDamage *= (1 + card.value)
-        println(s"Dégâts augmentés de ${(card.value * 100).toInt}%! Nouveaux dégâts: ${GameSettings.playerDamage}")
+        println(s"Damage increased by ${(card.value * 100).toInt}%! New damage: ${GameSettings.playerDamage}")
       case "speed" => 
         GameSettings.projectileCooldown *= (1 - card.value)
-        println(s"Vitesse d'attaque augmentée de ${(card.value * 100).toInt}%! Nouveau cooldown: ${GameSettings.projectileCooldown}")
+        println(s"Attack speed increased by ${(card.value * 100).toInt}%! New cooldown: ${GameSettings.projectileCooldown}")
       case "health" => 
         GameSettings.playerMaxHP += card.value
         GameSettings.playerCurrentHP += card.value
-        println(s"Vie maximum augmentée de ${card.value.toInt}! Nouvelle vie max: ${GameSettings.playerMaxHP}")
+        println(s"Maximum health increased by ${card.value.toInt}! New max health: ${GameSettings.playerMaxHP}")
       case "crit" => 
-        println(s"Chance critique augmentée de ${(card.value * 100).toInt}%!")
+        println(s"Critical chance increased by ${(card.value * 100).toInt}%!")
         // TODO: Implémenter système de critique
       case "regen" => 
-        println(s"Régénération augmentée de ${card.value}/s!")
+        println(s"Regeneration increased by ${card.value}/s!")
         // TODO: Implémenter régénération
       case "range" => 
         GameSettings.projectileShootRange *= (1 + card.value)
-        println(s"Portée augmentée de ${(card.value * 100).toInt}%! Nouvelle portée: ${GameSettings.projectileShootRange}")
+        println(s"Range increased by ${(card.value * 100).toInt}%! New range: ${GameSettings.projectileShootRange}")
       case "projectileSpeed" => 
         GameSettings.projectileSpeed *= (1 + card.value)
-        println(s"Vitesse des projectiles augmentée de ${(card.value * 100).toInt}%! Nouvelle vitesse: ${GameSettings.projectileSpeed}")
+        println(s"Projectile speed increased by ${(card.value * 100).toInt}%! New speed: ${GameSettings.projectileSpeed}")
       case "multiShot" => 
-        println("Double tir débloqué!")
+        println("Double shot unlocked!")
         // TODO: Implémenter double tir
-      case _ => println("Bonus mystérieux appliqué!")
+      case _ => println("Mysterious bonus applied!")
     }
   }
 
@@ -217,10 +217,10 @@ class ProgressionSystem {
   def useUltimate(): Boolean = {
     if (ultimateCharges > 0) {
       ultimateCharges -= 1
-      println(s"ULTIMATE UTILISÉ! Charges restantes: $ultimateCharges")
+      println(s"ULTIMATE USED! Remaining charges: $ultimateCharges")
       return true
     } else {
-      println("Pas de charge d'ultimate disponible!")
+      println("No ultimate charge available!")
       false
     }
   }

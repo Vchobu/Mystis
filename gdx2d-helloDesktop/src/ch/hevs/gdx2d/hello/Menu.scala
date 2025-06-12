@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.Color
 
 object MenuState extends Enumeration {
   type MenuState = Value
-  val START, LOAD, OPTIONS, EXIT = Value
+  val START, OPTIONS, CREDITS, EXIT = Value
 }
 
 class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
@@ -16,7 +16,7 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
   // Variables du menu
   private var currentSelection = MenuState.START
   private var backgroundImage: BitmapImage = _
-  private val menuOptions = List(MenuState.START, MenuState.LOAD, MenuState.OPTIONS, MenuState.EXIT)
+  private val menuOptions = List(MenuState.START, MenuState.OPTIONS, MenuState.CREDITS, MenuState.EXIT)
   private var selectedIndex = 0
   private var arrowMenuSelector: BitmapImage = _
 
@@ -53,7 +53,7 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
     
     // Charger l'image de fond
     try {
-      backgroundImage = new BitmapImage("gdx2d-helloDesktop/data/images/mystis_menu_background.jpg")
+      backgroundImage = new BitmapImage("gdx2d-helloDesktop/data/images/mystis_menu_background-v6-1920x1080.jpg")
       arrowMenuSelector = new BitmapImage("gdx2d-helloDesktop/data/images/arrow_menu-selector.png")
     } catch {
       case e: Exception =>
@@ -70,17 +70,17 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
   }
 
   private def drawMenuOptions(g: GdxGraphics): Unit = {
-    // Positions exactes selon ton image MYSTIS
-    val startY = 560 // Position de "Start"
-    val loadY = 460 // Position de "Load"
-    val optionsY = 360 // Position de "Options"
-    val exitY = 260 // Position de "Exit"
-    val menuX = 560 // Position X des options
+    // Positions exactes selon l'image MYSTIS
+    val startY = 565 // Position de "Start"
+    val optionsY = 465 // Position de "Options"
+    val CreditsY = 370 // Position de "Crédits"
+    val exitY = 280 // Position de "Exit"
+    val menuX = 570 // Position X des options
 
     val optionPositions = List(
       (menuX, startY), // Start
-      (menuX, loadY), // Load
-      (menuX, optionsY), // Options
+      (menuX, optionsY), // Load
+      (menuX, CreditsY), // Options
       (menuX, exitY) // Exit
     )
 
@@ -111,19 +111,19 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
   }
 
   private def handleMouseClick(x: Int, y: Int): Unit = {
-    // Coordonnées IDENTIQUES à drawMenuOptions (CORRECTION importante)
-    val startY = 560 // Position de "Start"
-    val loadY = 460 // Position de "Load" - CORRIGÉ (était 660)
-    val optionsY = 360 // Position de "Options" - CORRIGÉ (était 760)
-    val exitY = 260 // Position de "Exit" - CORRIGÉ (était 860)
-    val menuX = 560 // Position X des options
+    // Coordonnées IDENTIQUES à drawMenuOptions
+    val startY = 565 // Position de "Start"
+    val optionsY = 465 // Position de "Options"
+    val CreditsY = 370 // Position de "Crédits"
+    val exitY = 280 // Position de "Exit"
+    val menuX = 570 // Position X des options
     val optionWidth = 250
-    val optionHeight = 100
+    val optionHeight = 80
 
     val optionPositions = List(
       (menuX, startY), // Start
-      (menuX, loadY), // Load
       (menuX, optionsY), // Options
+      (menuX, CreditsY), // Credits
       (menuX, exitY) // Exit
     )
 
@@ -142,8 +142,8 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
   private def updateCurrentSelection(): Unit = {
     currentSelection = selectedIndex match {
       case 0 => MenuState.START
-      case 1 => MenuState.LOAD
-      case 2 => MenuState.OPTIONS
+      case 1 => MenuState.OPTIONS
+      case 2 => MenuState.CREDITS
       case 3 => MenuState.EXIT
     }
   }
@@ -155,12 +155,12 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
     currentSelection match {
       case MenuState.START =>
         startGame()
-      case MenuState.LOAD =>
-        openLoadMenu()
       case MenuState.OPTIONS =>
         openOptionsMenu()
+      case MenuState.CREDITS =>
+        openCreditsMenu()
       case MenuState.EXIT =>
-        System.exit(0) // CORRECTION : System.exit(0) au lieu de sys.exit()
+        System.exit(0)
     }
   }
 
@@ -175,8 +175,8 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
     unifiedApp.changeState(AppState.OPTIONS) // Utilise AppState du fichier principal
   }
 
-  private def openLoadMenu(): Unit = {
-    println("Ouverture du menu Load...")
+  private def openCreditsMenu(): Unit = {
+    println("Ouverture du menu Credits...")
     // TODO: implémenter le menu de chargement
   }
 

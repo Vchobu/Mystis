@@ -293,7 +293,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       }
 
       // Input for ultimate using unified control system:
-      if (Gdx.input.isKeyJustPressed(GameSettings.Controls.jump._1) || Gdx.input.isKeyJustPressed(GameSettings.Controls.jump._2)) {
+      if (Gdx.input.isKeyJustPressed(GameSettings.Controls.ultimate._1) || Gdx.input.isKeyJustPressed(GameSettings.Controls.ultimate._2)) {
         if (progressionSystem.useUltimate()) {
           // Play ultimate sound
           AudioManager.playUltimateSound()
