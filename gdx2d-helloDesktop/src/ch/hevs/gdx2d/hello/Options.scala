@@ -79,6 +79,12 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
 
   // Gameplay Section Components
   var gameplaySectionLabel: Label = _
+  var languageLabel: Label = _
+  var languageButton: TextButton = _
+  var languageDropdownButtons: ArrayBuffer[TextButton] = ArrayBuffer()
+  var languageDropdownVisible: Boolean = false
+  var subtitlesLabel: Label = _
+  var subtitlesButton: TextButton = _
 
   // Controls Section Components
   var controlsSectionLabel: Label = _
@@ -99,16 +105,23 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
   var resetButton: TextButton = _
 
   // State variables - Load from GameSettings
+  var currentLanguage: Int = 0
+  var subtitlesEnabled: Boolean = GameSettings.subtitlesEnabled
+  val languages = Array("English", "Français", "Deutsch", "Español", "Italiano")
 
   // Key bindings data - synchronized with GameSettings.Controls
   case class KeyBinding(action: String, gameAction: String, var primary: String, var secondary: String)
   val keyBindings = ArrayBuffer(
-    KeyBinding("Move Forward", "moveUp", GameSettings.Controls.getKeyName(GameSettings.Controls.moveUp._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveUp._2)),
-    KeyBinding("Move Backward", "moveDown", GameSettings.Controls.getKeyName(GameSettings.Controls.moveDown._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveDown._2)),
-    KeyBinding("Move Left", "moveLeft", GameSettings.Controls.getKeyName(GameSettings.Controls.moveLeft._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveLeft._2)),
-    KeyBinding("Move Right", "moveRight", GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._2)),
-    KeyBinding("Ultimate", "ultimate", GameSettings.Controls.getKeyName(GameSettings.Controls.ultimate._1), GameSettings.Controls.getKeyName(GameSettings.Controls.ultimate._2)),
-    KeyBinding("Menu", "menu", GameSettings.Controls.getKeyName(GameSettings.Controls.menu._1), GameSettings.Controls.getKeyName(GameSettings.Controls.menu._2))
+    KeyBinding("Avancer", "moveUp", GameSettings.Controls.getKeyName(GameSettings.Controls.moveUp._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveUp._2)),
+    KeyBinding("Reculer", "moveDown", GameSettings.Controls.getKeyName(GameSettings.Controls.moveDown._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveDown._2)),
+    KeyBinding("Gauche", "moveLeft", GameSettings.Controls.getKeyName(GameSettings.Controls.moveLeft._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveLeft._2)),
+    KeyBinding("Droite", "moveRight", GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._1), GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._2)),
+    KeyBinding("Saut", "jump", GameSettings.Controls.getKeyName(GameSettings.Controls.jump._1), GameSettings.Controls.getKeyName(GameSettings.Controls.jump._2)),
+    KeyBinding("Attaque", "attack", GameSettings.Controls.getKeyName(GameSettings.Controls.attack._1), GameSettings.Controls.getKeyName(GameSettings.Controls.attack._2)),
+    KeyBinding("Magie", "magic", GameSettings.Controls.getKeyName(GameSettings.Controls.magic._1), GameSettings.Controls.getKeyName(GameSettings.Controls.magic._2)),
+    KeyBinding("Inventaire", "inventory", GameSettings.Controls.getKeyName(GameSettings.Controls.inventory._1), GameSettings.Controls.getKeyName(GameSettings.Controls.inventory._2)),
+    KeyBinding("Menu", "menu", GameSettings.Controls.getKeyName(GameSettings.Controls.menu._1), GameSettings.Controls.getKeyName(GameSettings.Controls.menu._2)),
+    KeyBinding("Carte", "map", GameSettings.Controls.getKeyName(GameSettings.Controls.map._1), GameSettings.Controls.getKeyName(GameSettings.Controls.map._2))
   )
 
   def onInit(): Unit = {
@@ -186,7 +199,7 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
 
     waitingForKey = false
     captureIndex = -1
-    Logger.log(s"New key assigned: $keyName for ${binding.action}")
+    Logger.log(s"Nouvelle touche assignée: $keyName pour ${binding.action}")
   }
 
   private def captureMouseButton(button: Int): Unit = {
@@ -215,7 +228,7 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
 
     waitingForKey = false
     captureIndex = -1
-    Logger.log(s"New mouse button assigned: $buttonName for ${binding.action}")
+    Logger.log(s"Nouveau bouton souris assigné: $buttonName pour ${binding.action}")
   }
 
 
@@ -229,18 +242,18 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     audioSectionLabel.setFontScale(SECTION_FONT_SIZE)
     audioSectionLabel.setColor(MYSTIS_GOLD)
     
-    audioInfoLabel = new Label("Use system volume controls", skin)
+    audioInfoLabel = new Label("Utilisez les contrôles volume système", skin)
     audioInfoLabel.setFontScale(LABEL_FONT_SIZE)
     audioInfoLabel.setColor(MYSTIS_ORANGE)
 
-    musicLabel = new Label("Music:", skin)
+    musicLabel = new Label("Musique:", skin)
     musicLabel.setFontScale(LABEL_FONT_SIZE)
     musicLabel.setColor(MYSTIS_ORANGE)
     musicToggleButton = new TextButton(if (GameSettings.musicEnabled) "ON" else "OFF", skin)
     musicToggleButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
     musicToggleButton.getLabel.setColor(if (GameSettings.musicEnabled) MYSTIS_GOLD else MYSTIS_DARK_ORANGE)
 
-    sfxLabel = new Label("Sound Effects:", skin)
+    sfxLabel = new Label("Effets Sonores:", skin)
     sfxLabel.setFontScale(LABEL_FONT_SIZE)
     sfxLabel.setColor(MYSTIS_ORANGE)
     sfxToggleButton = new TextButton(if (GameSettings.sfxEnabled) "ON" else "OFF", skin)
@@ -248,21 +261,41 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     sfxToggleButton.getLabel.setColor(if (GameSettings.sfxEnabled) MYSTIS_GOLD else MYSTIS_DARK_ORANGE)
 
     // Display Section
-    displaySectionLabel = new Label("=== DISPLAY ===", skin)
+    displaySectionLabel = new Label("=== AFFICHAGE ===", skin)
     displaySectionLabel.setFontScale(SECTION_FONT_SIZE)
     displaySectionLabel.setColor(MYSTIS_GOLD)
 
     // Gameplay Section
-    gameplaySectionLabel = new Label("=== GAMEPLAY ===", skin)
+    gameplaySectionLabel = new Label("=== JEU ===", skin)
     gameplaySectionLabel.setFontScale(SECTION_FONT_SIZE)
     gameplaySectionLabel.setColor(MYSTIS_GOLD)
-    // Language and subtitles removed - keeping only essential controls
+    languageLabel = new Label("Langue", skin)
+    languageLabel.setFontScale(LABEL_FONT_SIZE)
+    languageLabel.setColor(MYSTIS_ORANGE)
+    languageButton = new TextButton(s"${languages(currentLanguage)} ▼", skin)
+    languageButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
+    languageButton.getLabel.setColor(MYSTIS_GOLD)
+
+    // Create language dropdown buttons
+    for (lang <- languages) {
+      val button = new TextButton(lang, skin)
+      button.getLabel.setFontScale(BUTTON_FONT_SIZE)
+      button.getLabel.setColor(MYSTIS_ORANGE)
+      languageDropdownButtons += button
+    }
+
+    subtitlesLabel = new Label("Sous-titres", skin)
+    subtitlesLabel.setFontScale(LABEL_FONT_SIZE)
+    subtitlesLabel.setColor(MYSTIS_ORANGE)
+    subtitlesButton = new TextButton(if (subtitlesEnabled) "ACTIVES" else "DESACTIVES", skin)
+    subtitlesButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
+    subtitlesButton.getLabel.setColor(MYSTIS_GOLD)
 
     // Controls Section
-    controlsSectionLabel = new Label("=== CONTROLS ===", skin)
+    controlsSectionLabel = new Label("=== CONTROLES ===", skin)
     controlsSectionLabel.setFontScale(SECTION_FONT_SIZE)
     controlsSectionLabel.setColor(MYSTIS_GOLD)
-    bindingsSubLabel = new Label("--- Keyboard Shortcuts ---", skin)
+    bindingsSubLabel = new Label("--- Raccourcis Clavier ---", skin)
     bindingsSubLabel.setFontScale(SUB_SECTION_FONT_SIZE)
     bindingsSubLabel.setColor(MYSTIS_ORANGE)
 
@@ -290,21 +323,21 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     }
 
     // Main Buttons
-    returnButton = new TextButton("Return", skin)
+    returnButton = new TextButton("Retour", skin)
     returnButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
     returnButton.getLabel.setColor(MYSTIS_GOLD)
-    applyButton = new TextButton("Apply", skin)
+    applyButton = new TextButton("Appliquer", skin)
     applyButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
     applyButton.getLabel.setColor(MYSTIS_GOLD)
     resetButton = new TextButton("Reset", skin)
     resetButton.getLabel.setFontScale(BUTTON_FONT_SIZE)
     resetButton.getLabel.setColor(MYSTIS_GOLD)
 
-    captureInstructionLabel1 = new Label("Press a key...", skin)
+    captureInstructionLabel1 = new Label("Appuyez sur une touche...", skin)
     captureInstructionLabel1.setFontScale(2.5f)
     captureInstructionLabel1.setColor(Color.YELLOW)
 
-    captureInstructionLabel2 = new Label("ESC to cancel", skin)
+    captureInstructionLabel2 = new Label("ESC pour annuler", skin)
     captureInstructionLabel2.setFontScale(2.2f)
     captureInstructionLabel2.setColor(Color.YELLOW)
   }
@@ -383,7 +416,24 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     gameplaySectionLabel.setPosition(col2X, row2Y)
     row2Y -= ESPACEMENT_SECTION
 
-    // Language and subtitles section removed
+    // Langue
+    languageLabel.setPosition(col2X + 20, row2Y)
+    languageButton.setPosition(col2X + 20 + LABEL_WIDTH, row2Y - 20)
+    languageButton.setSize(CONTROL_WIDTH, COMPONENT_HEIGHT)
+
+    // Position language dropdown (cachés)
+    var dropdownY = row2Y - COMPONENT_HEIGHT - 20
+    for (button <- languageDropdownButtons) {
+      button.setPosition(col2X + 20 + LABEL_WIDTH, dropdownY)
+      button.setSize(CONTROL_WIDTH, COMPONENT_HEIGHT)
+      dropdownY -= COMPONENT_HEIGHT
+    }
+    row2Y -= ESPACEMENT_ITEM
+
+    // Sous-titres
+    subtitlesLabel.setPosition(col2X + 20, row2Y - 20)
+    subtitlesButton.setPosition(col2X + 20 + LABEL_WIDTH, row2Y - 40)
+    subtitlesButton.setSize(CONTROL_WIDTH, COMPONENT_HEIGHT)
 
     // === BOUTONS PRINCIPAUX CENTRÉS ===
     val buttonY = 80
@@ -433,7 +483,28 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     })
 
 
-    // Language and subtitles event listeners removed
+    // Language dropdown
+    languageButton.addListener(new ClickListener() {
+      override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
+        toggleLanguageDropdown()
+      }
+    })
+
+    for (i <- languageDropdownButtons.indices) {
+      val index = i
+      languageDropdownButtons(i).addListener(new ClickListener() {
+        override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
+          selectLanguage(index)
+        }
+      })
+    }
+
+    // Subtitles toggle
+    subtitlesButton.addListener(new ClickListener() {
+      override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
+        toggleSubtitles()
+      }
+    })
 
     // Key binding buttons
     for (i <- keyBindings.indices) {
@@ -454,7 +525,7 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     // Main buttons
     returnButton.addListener(new ClickListener() {
       override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
-        Logger.log(s"Returning to ${GameSettings.previousState}")
+        Logger.log(s"Retour vers ${GameSettings.previousState}")
         if (unifiedApp != null) {
           GameSettings.previousState match {
             case "GAME" =>
@@ -494,10 +565,10 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     capturePrimary = primary
 
     val button = if (primary) keyBindingButtons1(index) else keyBindingButtons2(index)
-    button.setText("Press...")
+    button.setText("Appuyez...")
     button.getLabel.setColor(Color.YELLOW)
 
-    Logger.log(s"Waiting for key for: ${keyBindings(index).action} (${if (primary) "primary" else "secondary"})")
+    Logger.log(s"En attente d'une touche pour: ${keyBindings(index).action} (${if (primary) "principale" else "secondaire"})")
   }
 
   private def cancelKeyCapture(): Unit = {
@@ -512,16 +583,53 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     captureIndex = -1
   }
 
+  private def toggleLanguageDropdown(): Unit = {
+    languageDropdownVisible = !languageDropdownVisible
+    languageButton.setText(s"${languages(currentLanguage)} ${if (languageDropdownVisible) "▲" else "▼"}")
 
+    // Add or remove dropdown buttons from stage
+    if (languageDropdownVisible) {
+      for (button <- languageDropdownButtons) {
+        stage.addActor(button)
+      }
+    } else {
+      for (button <- languageDropdownButtons) {
+        button.remove()
+      }
+    }
+  }
 
+  private def selectLanguage(index: Int): Unit = {
+    currentLanguage = index
+    languageButton.setText(s"${languages(currentLanguage)} ▼")
+    languageDropdownVisible = false
+
+    // Remove dropdown buttons from stage
+    for (button <- languageDropdownButtons) {
+      button.remove()
+    }
+
+    Logger.log(s"Langue selectionnee: ${languages(currentLanguage)}")
+  }
+
+  private def toggleSubtitles(): Unit = {
+    subtitlesEnabled = !subtitlesEnabled
+    subtitlesButton.setText(if (subtitlesEnabled) "ACTIVES" else "DESACTIVES")
+    Logger.log(s"Sous-titres: ${if (subtitlesEnabled) "actives" else "desactives"}")
+  }
+  
 
   private def applySettings(): Unit = {
-    Logger.log("Applying settings...")
+    Logger.log("Application des parametres...")
     
-    // Save settings in GameSettings (audio already saved on click)
+    // Sauvegarder les paramètres dans GameSettings (audio déjà sauvegardé au clic)
+    GameSettings.subtitlesEnabled = subtitlesEnabled
+    
+    Logger.log(s"Langue: ${languages(currentLanguage)}")
+    Logger.log(s"Sous-titres: ${if (subtitlesEnabled) "actives" else "desactives"}")
     Logger.log(s"Musique: ${if (GameSettings.musicEnabled) "activee" else "desactivee"}")
     Logger.log(s"SFX: ${if (GameSettings.sfxEnabled) "actives" else "desactives"}")
-    Logger.log("Settings applied and saved!")
+    Logger.log("Parametres appliqués et sauvegardés !")
   }
 
   private def resetToDefaults(): Unit = {
@@ -536,16 +644,27 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     AudioManager.toggleSFX(true)
     GameSettings.sfxEnabled = true
 
-    // Reset display and gameplay (language and subtitles removed)
+    // Reset display and gameplay
+    currentLanguage = 0
+    languageButton.setText(s"${languages(currentLanguage)} ▼")
+    subtitlesEnabled = true
+    subtitlesButton.setText("ACTIVES")
+    
+    // Reset GameSettings display options
+    GameSettings.subtitlesEnabled = true
 
     // Reset key bindings to defaults in GameSettings.Controls
     import com.badlogic.gdx.Input
-    GameSettings.Controls.moveUp = (Input.Keys.W, Input.Keys.UP)
-    GameSettings.Controls.moveDown = (Input.Keys.S, Input.Keys.DOWN)
-    GameSettings.Controls.moveLeft = (Input.Keys.A, Input.Keys.LEFT)
-    GameSettings.Controls.moveRight = (Input.Keys.D, Input.Keys.RIGHT)
-    GameSettings.Controls.ultimate = (Input.Keys.SPACE, Input.Keys.NUMPAD_0)
-    GameSettings.Controls.menu = (Input.Keys.ESCAPE, Input.Keys.B)
+    GameSettings.Controls.moveUp = (Input.Keys.W, Input.Keys.NUMPAD_8)
+    GameSettings.Controls.moveDown = (Input.Keys.S, Input.Keys.NUMPAD_5)
+    GameSettings.Controls.moveLeft = (Input.Keys.A, Input.Keys.NUMPAD_4)
+    GameSettings.Controls.moveRight = (Input.Keys.D, Input.Keys.NUMPAD_6)
+    GameSettings.Controls.jump = (Input.Keys.SPACE, Input.Keys.NUMPAD_0)
+    GameSettings.Controls.attack = (-1, Input.Keys.CONTROL_LEFT)
+    GameSettings.Controls.magic = (-2, Input.Keys.ALT_LEFT)
+    GameSettings.Controls.inventory = (Input.Keys.I, Input.Keys.TAB)
+    GameSettings.Controls.menu = (Input.Keys.ESCAPE, Input.Keys.M)
+    GameSettings.Controls.map = (Input.Keys.M, Input.Keys.F1)
 
     // Update UI to reflect the reset values
     for (i <- keyBindings.indices) {
@@ -563,14 +682,26 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
         case "moveRight" => 
           binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._1)
           binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.moveRight._2)
-        case "ultimate" =>
-          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.ultimate._1)
-          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.ultimate._2)
-        case "menu" =>
+        case "jump" => 
+          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.jump._1)
+          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.jump._2)
+        case "attack" => 
+          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.attack._1)
+          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.attack._2)
+        case "magic" => 
+          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.magic._1)
+          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.magic._2)
+        case "inventory" => 
+          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.inventory._1)
+          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.inventory._2)
+        case "menu" => 
           binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.menu._1)
           binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.menu._2)
+        case "map" => 
+          binding.primary = GameSettings.Controls.getKeyName(GameSettings.Controls.map._1)
+          binding.secondary = GameSettings.Controls.getKeyName(GameSettings.Controls.map._2)
         case _ =>
-          // Default case for unrecognized actions
+          // Cas par défaut pour les actions non reconnues
       }
       
       keyBindingButtons1(i).setText(binding.primary)
@@ -580,7 +711,7 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
     }
 
 
-    Logger.log("Settings reset")
+    Logger.log("Parametres reinitialises")
   }
 
   private def addComponentsToStage(): Unit = {
@@ -600,7 +731,10 @@ class MystisOptionsMenu(unifiedApp: MystisUnifiedApp = null) {
 
     // Gameplay section
     stage.addActor(gameplaySectionLabel)
-    // Language and subtitles actors removed
+    stage.addActor(languageLabel)
+    stage.addActor(languageButton)
+    stage.addActor(subtitlesLabel)
+    stage.addActor(subtitlesButton)
 
     // Controls section
     stage.addActor(controlsSectionLabel)

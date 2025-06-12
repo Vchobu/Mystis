@@ -29,7 +29,6 @@ class Enemy(val pos: Vector2) {
       case "alive" =>
         val direction = playerPos.cpy().sub(getCenter)
         flipX = direction.x < 0
-
         val moveDir = direction.nor().scl(GameSettings.enemySpeed)
         pos.add(moveDir)
         pos.add(velocity)

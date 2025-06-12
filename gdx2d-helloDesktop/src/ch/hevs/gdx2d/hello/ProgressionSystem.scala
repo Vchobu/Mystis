@@ -218,7 +218,7 @@ class ProgressionSystem {
     if (ultimateCharges > 0) {
       ultimateCharges -= 1
       println(s"ULTIMATE USED! Remaining charges: $ultimateCharges")
-      return true
+      true
     } else {
       println("No ultimate charge available!")
       false
