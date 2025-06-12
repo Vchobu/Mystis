@@ -2,17 +2,18 @@ package ch.hevs.gdx2d.hello
 
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.{Color, GL20, OrthographicCamera}
+import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.maps.tiled.{TiledMap, TmxMapLoader}
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.{MathUtils, Vector2}
 import com.badlogic.gdx.scenes.scene2d.{InputEvent, Stage}
 import com.badlogic.gdx.scenes.scene2d.ui._
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.{InputMultiplexer, InputProcessor}
+import com.badlogic.gdx.{InputProcessor, InputMultiplexer}
 
 import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
@@ -31,6 +32,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
   val enemies: ArrayBuffer[Enemy] = new ArrayBuffer[Enemy]() // Collection of enemy entities
   val projectiles: ArrayBuffer[Projectile] = new ArrayBuffer[Projectile]() // Player projectiles
   val random: Random = new Random() // Random number generator for spawning
+  var gameOver: Boolean = false // Game over state flag
 
   // Progression and leveling system
   val progressionSystem = new ProgressionSystem()
@@ -277,13 +279,6 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       mapRenderer.render()
     }
 
-    if (GameSettings.gameOver) {
-      val font = new BitmapFont()
-      font.getData.setScale(5f)
-      font.setColor(new Color(0.7f, 0f, 0f, 1f))
-      g.drawString(GameSettings.width / 2, GameSettings.height / 3, "GAME OVER", font, 1)
-    }
-
     // Game logic only if not paused
     if (!GameSettings.isGamePaused) {
       // Input handling for bonuses using unified control system:
@@ -298,7 +293,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       }
 
       // Input for ultimate using unified control system:
-      if (Gdx.input.isKeyJustPressed(GameSettings.Controls.jump._1) || Gdx.input.isKeyJustPressed(GameSettings.Controls.jump._2)) {
+      if (Gdx.input.isKeyJustPressed(GameSettings.Controls.ultimate._1) || Gdx.input.isKeyJustPressed(GameSettings.Controls.ultimate._2)) {
         if (progressionSystem.useUltimate()) {
           // Play ultimate sound
           AudioManager.playUltimateSound()
@@ -320,15 +315,11 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
         }
       }
 
-      if (!GameSettings.gameOver) {
+      if (!gameOver) {
         var playerTouched = false
         val deltaTime = Gdx.graphics.getDeltaTime
         player.update(deltaTime)
         player.updateShootTimer(deltaTime)
-
-        if (player.isDead && player.isDeathAnimationFinished) {
-          GameSettings.gameOver = true
-        }
 
         val nearestEnemyToShoot = enemies.minByOption(_.getCenter.dst(player.getCenter))
         nearestEnemyToShoot.foreach { enemy =>
@@ -436,6 +427,10 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       pauseStage.draw()
     }
 
+    if (player.isDead) {
+      gameOver = true
+      println("GAME OVER!")
+    }
   }
 
   /**

@@ -181,8 +181,9 @@ class ProgressionSystem {
   def drawLevelUpScreen(g: GdxGraphics, screenWidth: Float, screenHeight: Float): Unit = {
     if (!isLevelUpPaused || currentBonusCards.isEmpty) return
 
-    g.setColor(new Color(0, 0, 0, 0.8f))
-    g.drawFilledRectangle(0, 0, screenWidth, screenHeight, 0)
+    // Draw semi-transparent background overlay covering entire screen
+    g.setColor(MystisColors.MYSTIS_BROWN)
+    g.drawFilledRectangle(screenWidth/2, screenHeight/2, screenWidth, screenHeight, 0)
 
     g.setColor(Color.YELLOW)
     g.drawString(screenWidth / 2 - 100, screenHeight / 2 + 150, s"LEVEL ${currentLevel}!", 0)
@@ -190,27 +191,45 @@ class ProgressionSystem {
     g.drawString(screenWidth / 2 - 120, screenHeight / 2 + 120, "Choose your bonus:", 0)
 
     val cardWidth = 300
-    val cardHeight = 500f
+    val cardHeight = 100
     val spacing = 50f
-    val startX = (screenWidth - (3 * cardWidth + 2 * spacing)) / 2
+    val totalWidth = 3 * cardWidth + 2 * spacing
+    val startX = (screenWidth - totalWidth) / 2
 
     for (i <- currentBonusCards.indices) {
       val card = currentBonusCards(i)
-      val cardX = startX + i * (cardWidth + spacing)
-      val cardY = screenHeight / 2 - cardHeight / 2
+      val cardX = startX + i * (cardWidth + spacing) + cardWidth/2 // Center X position
+      val cardY = screenHeight / 2 // Center Y position
 
-      g.setColor(Color.DARK_GRAY)
+      // Draw filled card background (centered)
+      g.setColor(MystisColors.DARK)
       g.drawFilledRectangle(cardX, cardY, cardWidth, cardHeight, 0)
+      
+      // Draw card border (centered) 
       g.setColor(Color.WHITE)
       g.drawRectangle(cardX, cardY, cardWidth, cardHeight, 0)
+      // Calculate text positions relative to centered card
+      val textX = cardX - cardWidth/2 + 10 // Left edge of card + margin
+      val textTopY = cardY + cardHeight/2 - 20 // Top area of card
+      val textMiddleY = cardY + cardHeight/2 - 45 // Middle area of card
+      val textLowerY = cardY + cardHeight/2 - 70 // Lower area of card
+      val textBottomY = cardY - cardHeight/2 + 15 // Bottom area of card
+      
+      // Draw card number
       g.setColor(Color.YELLOW)
-      g.drawString(cardX + 10, cardY + cardHeight - 20, s"${i + 1}")
+      g.drawString(textX, textTopY, s"${i + 1}")
+      
+      // Draw card name
       g.setColor(Color.WHITE)
-      g.drawString(cardX + 10, cardY + cardHeight - 45, card.name)
+      g.drawString(textX, textMiddleY, card.name)
+      
+      // Draw card description
       g.setColor(Color.LIGHT_GRAY)
-      g.drawString(cardX + 10, cardY + cardHeight - 70, card.description)
+      g.drawString(textX, textLowerY, card.description)
+      
+      // Draw instruction
       g.setColor(Color.CYAN)
-      g.drawString(cardX + 10, cardY + 15, s"Press ${i + 1}")
+      g.drawString(textX, textBottomY, s"Press ${i + 1}")
     }
   }
 
