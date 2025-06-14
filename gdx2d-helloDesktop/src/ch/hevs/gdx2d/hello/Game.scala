@@ -73,7 +73,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
 
     player = new Player(new Vector2(GameSettings.width / 2, GameSettings.height / 2))
     for (_ <- 0 until GameSettings.enemyLimit) {
-      enemies.append(new Enemy(randomEnemyPosition()))
+      enemies.append(new Enemy(randomEnemyPosition(), random.nextInt(2)))
     }
 
     // Initialize pause menu
@@ -117,7 +117,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
     do {
       pos = new Vector2(MathUtils.random(0f, 1920), MathUtils.random(0f, 1080))
     } while (pos.dst(playerPos) < GameSettings.enemySpawnMinDistance)
-    new Enemy(pos)
+    new Enemy(pos, random.nextInt(2))
   }
 
   /**
@@ -324,7 +324,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
         val nearestEnemyToShoot = enemies.minByOption(_.getCenter.dst(player.getCenter))
         nearestEnemyToShoot.foreach { enemy =>
           val distance = enemy.getCenter.dst(player.getCenter)
-          if (distance <= GameSettings.projectileShootRange && player.canShoot && enemy.state == "alive") {
+          if (distance <= GameSettings.projectileShootRange && player.canShoot && enemy.state != "dead") {
             val direction = enemy.getCenter.cpy().sub(player.getCenter).nor()
             val projectile = new Projectile(player.getCenter.cpy(), direction.scl(GameSettings.projectileSpeed))
             projectiles.append(projectile)
@@ -355,7 +355,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
           }
         }
 
-        val deadEnemies = enemies.filter(e => e.isDead)
+        val deadEnemies = enemies.filter(_.state == "dead")
 
         // XP only if there are dead enemies
         for (e <- deadEnemies) {
