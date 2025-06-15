@@ -166,6 +166,11 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
 
   private def startGame(): Unit = {
     println("Démarrage du jeu...")
+    GameSettings.playerCurrentHP = GameSettings.playerBaseCurrentHP
+    GameSettings.playerMaxHP = GameSettings.playerBaseMaxHP
+    GameSettings.playerDamage = GameSettings.playerBaseDamage
+    GameSettings.playerSpeed = GameSettings.playerBaseSpeed
+    GameSettings.playerSize = GameSettings.playerBaseSize
     unifiedApp.changeState(AppState.GAME) // Utilise AppState du fichier principal
   }
 

@@ -9,6 +9,12 @@ object GameSettings {
   val width: Int = 1920
   val height: Int = 1080
 
+  val playerBaseCurrentHP: Float = 100f
+  val playerBaseMaxHP: Float = 100f
+  val playerBaseDamage: Float = 2.0f
+  val playerBaseSpeed: Float = 3f
+  val playerBaseSize: Float = 20f
+
   var playerCurrentHP: Float = 100f
   var playerMaxHP: Float = 100f
   var playerDamage: Float = 2.0f
