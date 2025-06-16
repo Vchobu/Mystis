@@ -2,18 +2,17 @@ package ch.hevs.gdx2d.hello
 
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.{Color, GL20, OrthographicCamera}
 import com.badlogic.gdx.maps.tiled.{TiledMap, TmxMapLoader}
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.{MathUtils, Vector2}
 import com.badlogic.gdx.scenes.scene2d.{InputEvent, Stage}
 import com.badlogic.gdx.scenes.scene2d.ui._
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.{InputProcessor, InputMultiplexer}
+import com.badlogic.gdx.{InputMultiplexer, InputProcessor}
 
 import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
@@ -50,7 +49,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
   var gameInputProcessor: InputProcessor = _ // Handles game input
   var inputMultiplexer: InputMultiplexer = _ // Manages multiple input processors
 
-
+  var font: BitmapFont = _
   /**
    * Initialize the game components, load resources, and set up the game state.
    * Called once when the game starts.
@@ -321,6 +320,10 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
         player.update(deltaTime)
         player.updateShootTimer(deltaTime)
 
+        if (player.state == "dead" && player.isDeathAnimationFinished) {
+          gameOver = true
+        }
+
         val nearestEnemyToShoot = enemies.minByOption(_.getCenter.dst(player.getCenter))
         nearestEnemyToShoot.foreach { enemy =>
           val distance = enemy.getCenter.dst(player.getCenter)
@@ -427,9 +430,11 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       pauseStage.draw()
     }
 
-    if (player.isDead) {
-      gameOver = true
-      println("GAME OVER!")
+    if (gameOver) {
+      val font = new BitmapFont()
+      font.getData.setScale(8f)
+      font.setColor(new Color(0.7f, 0f, 0f, 1f))
+      g.drawString(GameSettings.width / 2, GameSettings.height / 2, "GAME OVER", font, 1)
     }
   }
 
