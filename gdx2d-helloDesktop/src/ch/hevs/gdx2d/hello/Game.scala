@@ -50,7 +50,7 @@ class MystisGameMenu(unifiedApp: MystisUnifiedApp = null) {
   var gameInputProcessor: InputProcessor = _ // Handles game input
   var inputMultiplexer: InputMultiplexer = _ // Manages multiple input processors
 
-
+  var font: BitmapFont = _
   /**
    * Initialize the game components, load resources, and set up the game state.
    * Called once when the game starts.

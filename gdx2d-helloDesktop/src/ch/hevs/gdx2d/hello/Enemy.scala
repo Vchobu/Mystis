@@ -39,8 +39,8 @@ class Enemy(val pos: Vector2, val enemyType: Int) {
 
     case 1 =>
       hp = GameSettings.enemyHP * 1.5f
-      floatAnim = new SpriteAnimation("gdx2d-helloDesktop/data/sprites/agis/separated_frames/agis_%d.png", 1, 17, 0.5f, 8.5f, true)
-      deathAnim = new SpriteAnimation("gdx2d-helloDesktop/data/sprites/agis/separated_frames/agisDeath_%d.png", 1, 65, 0.5f, 32.5f, false)
+      floatAnim = new SpriteAnimation("gdx2d-helloDesktop/data/sprites/agis/separated_frames/agis_%d.png", 1, 17, 0.5f, 4.25f, true)
+      deathAnim = new SpriteAnimation("gdx2d-helloDesktop/data/sprites/agis/separated_frames/agisDeath_%d.png", 1, 65, 0.5f, 16.25f, false)
       flipX = false
   }
 
