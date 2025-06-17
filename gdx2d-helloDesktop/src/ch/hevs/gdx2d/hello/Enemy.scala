@@ -3,14 +3,32 @@ package ch.hevs.gdx2d.hello
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.math.Vector2
 
+/**
+ * Classe représentant les ennemis dans le jeu Mystis.
+ * 
+ * Supporte deux types d'ennemis avec des sprites et comportements différents:
+ * - Type 0: Agis (ennemis terrestres avec animations de marche)
+ * - Type 1: Floating Skull (crânes volants avec animations flottantes)
+ * 
+ * Fonctionnalités:
+ * - IA de poursuite du joueur avec évitement entre ennemis
+ * - Système de santé et de dégâts
+ * - Animations d'état (vivant, mort)
+ * - Collision avec le joueur et les projectiles
+ * - Système de répulsion pour éviter l'accumulation
+ * 
+ * @param pos Position initiale de l'ennemi dans le monde
+ * @param enemyType Type d'ennemi (0 = Agis, 1 = Floating Skull)
+ */
 class Enemy(val pos: Vector2, val enemyType: Int) {
 
-  var hp: Float = _
-  var velocity: Vector2 = new Vector2(0, 0)
-  var floatAnim: SpriteAnimation = _
-  var deathAnim: SpriteAnimation = _
-  var state: String = "alive"
-  var flipX: Boolean = _
+  // === PROPRIÉTÉS DE BASE ===
+  var hp: Float = _                           // Points de vie actuels
+  var velocity: Vector2 = new Vector2(0, 0)   // Vecteur de déplacement
+  var floatAnim: SpriteAnimation = _          // Animation principale (vivant)
+  var deathAnim: SpriteAnimation = _          // Animation de mort
+  var state: String = "alive"                 // État actuel ("alive", "dead")
+  var flipX: Boolean = _                      // Direction d'affichage (gauche/droite)
 
   enemyType match {
     case 0 =>

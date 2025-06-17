@@ -1,17 +1,40 @@
 package ch.hevs.gdx2d.hello
 
 import ch.hevs.gdx2d.components.bitmaps.BitmapImage
+import ch.hevs.gdx2d.desktop.PortableApplication
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.graphics.Color
 
+/**
+ * États possibles du menu principal pour la navigation.
+ * Utilisé par le système de sélection par flèches directionnelles.
+ */
 object MenuState extends Enumeration {
   type MenuState = Value
-  val START, OPTIONS, CREDITS, EXIT = Value
+  val START,    // Démarrer une nouvelle partie
+      OPTIONS,  // Ouvrir les paramètres du jeu
+      CREDITS,  // Afficher les crédits
+      EXIT = Value // Quitter l'application
 }
 
-class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
+/**
+ * Menu principal de Mystis avec navigation par clavier et arrière-plan visuel.
+ * 
+ * Fonctionnalités:
+ * - Navigation verticale avec touches directionnelles (WASD/Flèches)
+ * - Sélection avec Espace/Entrée
+ * - Arrière-plan d'ambiance avec logo du jeu
+ * - Flèche de sélection animée
+ * - Intégration avec le système audio (musique de menu)
+ * 
+ * Le menu utilise le système de contrôles unifié défini dans GameSettings
+ * pour une cohérence avec le reste du jeu.
+ * 
+ * @param unifiedApp Référence vers l'application principale pour la navigation entre états
+ */
+class MystisMainMenu(unifiedApp: MystisUnifiedApp = null) {
 
   // Variables du menu
   private var currentSelection = MenuState.START
@@ -103,7 +126,7 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
     } else if (GameSettings.Controls.isKeyPressed("moveDown", keycode)) {
       selectedIndex = (selectedIndex + 1 + 4) % 4
       updateCurrentSelection()
-    } else if (GameSettings.Controls.isKeyPressed("jump", keycode) || keycode == Keys.ENTER) {
+    } else if (GameSettings.Controls.isKeyPressed("ultimate", keycode) || keycode == Keys.SPACE || keycode == Keys.ENTER) {
       executeMenuAction()
     } else if (GameSettings.Controls.isKeyPressed("menu", keycode)) {
       System.exit(0)
@@ -181,8 +204,10 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
   }
 
   private def openCreditsMenu(): Unit = {
-    println("Ouverture du menu Credits...")
-    // TODO: implémenter le menu de chargement
+    println("Opening Credits Menu...")
+    if (unifiedApp != null) {
+      unifiedApp.changeState(AppState.CREDITS)
+    }
   }
 
   def dispose(): Unit = {
@@ -191,5 +216,37 @@ class MystisMainMenu(unifiedApp: MystisUnifiedApp) {
     
     if (backgroundImage != null) backgroundImage.dispose()
     if (arrowMenuSelector != null) arrowMenuSelector.dispose()
+  }
+}
+
+/**
+ * Lanceur autonome pour tester le mainMenu indépendamment.
+ *
+ * UTILISATION :
+ * - Développement : tester le menu sans lancer tout le jeu
+ * - Débogage : isoler les problèmes du menu des options
+ * - Démonstration : montrer le menu à des tiers
+ *
+ * FONCTIONNEMENT :
+ * Crée une instance du menu sans application unifiée (unifiedApp = null)
+ */
+object MystisMenuLauncher extends PortableApplication(1920, 1080) with App {
+  var mainMenu: MystisMainMenu = _
+
+  override def onInit(): Unit = {
+    mainMenu = new MystisMainMenu()
+    mainMenu.onInit()
+  }
+
+  override def onGraphicRender(g: GdxGraphics): Unit = {
+    mainMenu.onGraphicRender(g)
+  }
+
+  override def onKeyDown(keycode: Int): Unit = {
+    mainMenu.onKeyDown(keycode)
+  }
+
+  def dispose(): Unit = {
+    if (mainMenu != null) mainMenu.dispose()
   }
 }

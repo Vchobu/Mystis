@@ -152,6 +152,9 @@ class Player(var pos: Vector2) {
     }
 
     currentAnim.updateAnimation(dt)
+    // Appliquer les limites du monde
+    pos.x = Math.max(GameSettings.worldMinX + 70, Math.min(GameSettings.worldMaxX - 70, pos.x))
+    pos.y = Math.max(GameSettings.worldMinY + 70, Math.min(GameSettings.worldMaxY - 70, pos.y))
   }
 
   /**

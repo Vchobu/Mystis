@@ -1,19 +1,19 @@
 package ch.hevs.gdx2d.hello
 
+import ch.hevs.gdx2d.desktop.PortableApplication
 import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.{Color, GL20, OrthographicCamera}
 import com.badlogic.gdx.maps.tiled.{TiledMap, TmxMapLoader}
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.{MathUtils, Vector2}
 import com.badlogic.gdx.scenes.scene2d.{InputEvent, Stage}
 import com.badlogic.gdx.scenes.scene2d.ui._
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.{BitmapFont, SpriteBatch}
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.{InputProcessor, InputMultiplexer}
+import com.badlogic.gdx.{InputMultiplexer, InputProcessor}
 
 import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
  * 
  * @param unifiedApp Optional reference to the unified app for state management
  */
-class Game(unifiedApp: MystisUnifiedApp = null) {
+class MystisGameMenu(unifiedApp: MystisUnifiedApp = null) {
 
   // Core game entities
   var player: Player = _ // Main player character
@@ -65,13 +65,29 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
     try {
       map = new TmxMapLoader().load("gdx2d-helloDesktop/data/maps/map.tmx")
       mapRenderer = new OrthogonalTiledMapRenderer(map, 0.3f)
+      
+      // Update world boundaries based on map dimensions
+      if (map != null) {
+        val properties = map.getProperties
+        val tileWidth = properties.get("tilewidth", classOf[Integer])
+        val tileHeight = properties.get("tileheight", classOf[Integer])
+        val mapWidthInTiles = properties.get("width", classOf[Integer])
+        val mapHeightInTiles = properties.get("height", classOf[Integer])
+        
+        // Calculate actual map size with scale factor
+        val mapWidth = tileWidth * mapWidthInTiles * 0.3f
+        val mapHeight = tileHeight * mapHeightInTiles * 0.3f
+        
+        // Update world boundaries
+        GameSettings.updateWorldBounds(0f, 0f, mapWidth, mapHeight)
+      }
     } catch {
       case e: Exception =>
         println(s"Unable to load map: ${e.getMessage}")
         // Continue without map if it doesn't exist
     }
 
-    player = new Player(new Vector2(GameSettings.width / 2, GameSettings.height / 2))
+    player = new Player(new Vector2(1700, 2070))
     for (_ <- 0 until GameSettings.enemyLimit) {
       enemies.append(new Enemy(randomEnemyPosition(), random.nextInt(2)))
     }
@@ -81,13 +97,32 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
     initGameInputProcessor()
     initPauseMenu()
     
-    // IMPORTANT: If returning from options, restore input correctly
-    if (GameSettings.isGamePaused) {
-      pauseGame() // Reactivate pause menu
+    // IMPORTANT: Check if we're returning from options to game
+    if (GameSettings.previousState == "GAME") {
+      println("🔄 Returning from options to game - restoring pause state")
+      // Force game to be paused when returning from options
+      GameSettings.isGamePaused = true
+      
+      // CRITICAL: Completely reinitialize pause menu to fix button issues
+      if (pauseStage != null) pauseStage.dispose()
+      if (pauseSkin != null) pauseSkin.dispose()
+      initPauseMenu() // Recreate pause menu from scratch
+      
+      // Ensure pause menu is properly initialized and active
+      inputMultiplexer.clear()
+      inputMultiplexer.addProcessor(pauseStage)
+      inputMultiplexer.addProcessor(gameInputProcessor)
+      Gdx.input.setInputProcessor(inputMultiplexer)
+      // Reset the previous state
+      GameSettings.previousState = ""
     } else {
-      resumeGame() // Ensure game input is active
+      // Normal initialization - ensure game input is active
+      inputMultiplexer.clear()
+      inputMultiplexer.addProcessor(gameInputProcessor)
+      Gdx.input.setInputProcessor(inputMultiplexer)
     }
   }
+
 
   /**
    * Generate a random enemy spawn position that maintains minimum distance from player.
@@ -272,10 +307,32 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
    */
   def onGraphicRender(g: GdxGraphics): Unit = {
     g.clear()
+
+    // Camera follows player with map bounds
+    val playerCenter = player.getCenter
+    
+    // Calculate camera position with bounds checking
+    val halfScreenWidth = GameSettings.width / 2f
+    val halfScreenHeight = GameSettings.height / 2f
+    
+    // Constrain camera to not show beyond map edges
+    val cameraX = MathUtils.clamp(playerCenter.x, 
+      GameSettings.worldMinX + halfScreenWidth, 
+      GameSettings.worldMaxX - halfScreenWidth)
+    val cameraY = MathUtils.clamp(playerCenter.y, 
+      GameSettings.worldMinY + halfScreenHeight, 
+      GameSettings.worldMaxY - halfScreenHeight)
+    
+    // Get map dimensions for moveCamera method
+    val mapWidth = GameSettings.worldMaxX - GameSettings.worldMinX
+    val mapHeight = GameSettings.worldMaxY - GameSettings.worldMinY
+    
+    // Use GdxGraphics moveCamera with constrained position
+    g.moveCamera(cameraX, cameraY, mapWidth.toInt, mapHeight.toInt)
+
     // Render map if it exists
     if (mapRenderer != null) {
-      camera.update()
-      mapRenderer.setView(camera)
+      mapRenderer.setView(g.getCamera)
       mapRenderer.render()
     }
 
@@ -315,11 +372,15 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
         }
       }
 
-      if (!gameOver) {
+      if (!gameOver && !progressionSystem.isLevelUpPaused) {
         var playerTouched = false
         val deltaTime = Gdx.graphics.getDeltaTime
         player.update(deltaTime)
         player.updateShootTimer(deltaTime)
+
+        if (player.state == "dead" && player.isDeathAnimationFinished) {
+          gameOver = true
+        }
 
         val nearestEnemyToShoot = enemies.minByOption(_.getCenter.dst(player.getCenter))
         nearestEnemyToShoot.foreach { enemy =>
@@ -329,6 +390,9 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
             val projectile = new Projectile(player.getCenter.cpy(), direction.scl(GameSettings.projectileSpeed))
             projectiles.append(projectile)
             player.resetShootTimer()
+            
+            // Play shooting sound
+            AudioManager.playShootSound()
           }
         }
 
@@ -364,9 +428,13 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
           // Play kill sound
           AudioManager.playKillSound()
 
-          // GIVE XP, once per dead enemy
-          progressionSystem.onEnemyKilled("basicEnemy")
-
+          // Give XP based on enemy type (0 = basicEnemy=5xp, 1 = eliteEnemy=10xp)
+          val enemyType = if (e.enemyType == 0) "basicEnemy" else "eliteEnemy"
+          progressionSystem.onEnemyKilled(enemyType)
+        }
+        
+        // Spawn new enemies to maintain current limit
+        while (enemies.length < GameSettings.enemyLimit) {
           val newEnemy = createEnemyAwayFromPlayer(player.getCenter)
           enemies.append(newEnemy)
         }
@@ -389,7 +457,7 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       } // End of if (!gameOver) block
     } // End of pause condition
 
-    // DISPLAY (always, even when paused):
+    // DISPLAY WORLD ELEMENTS (with camera):
     for (p <- projectiles) {
       p.draw(g)
     }
@@ -398,11 +466,15 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       e.draw(g)
     }
 
-    // Complete UI system:
+    player.draw(g)
+
+    // Reset camera for UI rendering (fixed screen coordinates)
+    val originalCamera = g.getCamera
+    g.resetCamera()
+
+    // UI ELEMENTS (fixed screen position):
     progressionSystem.drawAllUI(g, 1920, 1080,
       GameSettings.playerCurrentHP, GameSettings.playerMaxHP)
-
-    player.draw(g)
 
     // Display FPS
     g.drawFPS(MystisColors.GOLD)
@@ -412,8 +484,24 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       progressionSystem.drawLevelUpScreen(g, 1920, 1080)
     }
 
+    // Debug info - player position (fixed on screen)
+//    val playerPos = player.getCenter
+//    g.setColor(MystisColors.GOLD)
+//    g.drawString(GameSettings.width - 200, 20,
+//      f"Position: (${playerPos.x}%.0f, ${playerPos.y}%.0f)")
+
     // Pause menu with semi-transparent background
     if (GameSettings.isGamePaused) {
+      // DEBUG: Check input processor setup
+      val currentProcessor = Gdx.input.getInputProcessor
+      if (currentProcessor != inputMultiplexer) {
+        println("🚨 WARNING: InputProcessor mismatch detected! Fixing...")
+        inputMultiplexer.clear()
+        inputMultiplexer.addProcessor(pauseStage)
+        inputMultiplexer.addProcessor(gameInputProcessor)
+        Gdx.input.setInputProcessor(inputMultiplexer)
+      }
+      
       // Darken screen
       Gdx.gl.glEnable(GL20.GL_BLEND)
       Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -427,9 +515,11 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
       pauseStage.draw()
     }
 
-    if (player.isDead) {
-      gameOver = true
-      println("GAME OVER!")
+    if (gameOver) {
+      val font = new BitmapFont()
+      font.getData.setScale(8f)
+      font.setColor(new Color(0.7f, 0f, 0f, 1f))
+      g.drawString(GameSettings.width / 2, GameSettings.height / 2, "GAME OVER", font, 1)
     }
   }
 
@@ -459,10 +549,30 @@ class Game(unifiedApp: MystisUnifiedApp = null) {
 }
 
 /**
- * Standalone game launcher for testing the Game class independently.
- * Creates a new Game instance without unified app integration.
+ * Lanceur autonome pour tester le menu Game indépendamment.
+ *
+ * UTILISATION :
+ * - Développement : tester le menu sans lancer tout le jeu
+ * - Débogage : isoler les problèmes du menu des options
+ * - Démonstration : montrer le menu à des tiers
+ *
+ * FONCTIONNEMENT :
+ * Crée une instance du menu sans application unifiée (unifiedApp = null)
  */
-object GameLauncher extends App {
-  new Game()
+object MystisGameMenuLauncher extends PortableApplication(1920, 1080) with App {
+  var gameMenu: MystisGameMenu = _
+
+  override def onInit(): Unit = {
+    gameMenu = new MystisGameMenu()
+    gameMenu.onInit()
+  }
+
+  override def onGraphicRender(g: GdxGraphics): Unit = {
+    gameMenu.onGraphicRender(g)
+  }
+
+  def dispose(): Unit = {
+    if (gameMenu != null) gameMenu.dispose()
+  }
 }
 

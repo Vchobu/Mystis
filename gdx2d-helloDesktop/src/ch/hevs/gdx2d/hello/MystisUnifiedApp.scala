@@ -1,4 +1,18 @@
 // ==== FICHIER PRINCIPAL COMPLET : MystisUnifiedApp.scala ====
+/**
+ * Point d'entrée principal du jeu Mystis - Application LibGDX utilisant le framework GDX2D.
+ * 
+ * Ce fichier contient:
+ * - La classe principale MystisUnifiedApp qui gère le cycle de vie de l'application
+ * - Les énumérations d'états (MENU, GAME, OPTIONS, CREDITS)
+ * - Les couleurs personnalisées du thème Mystis
+ * - Le système de navigation entre écrans
+ * - La gestion centralisée de l'audio et des ressources
+ * 
+ * Développé pour le cours 103.2 - Programmation Orientée Objet (POO)
+ * HES-SO Valais-Wallis, Informatique et Système de Communication
+ * Par: Dino Bijelic et Vadym Chobu, JUIN 2025
+ */
 package ch.hevs.gdx2d.hello
 
 import ch.hevs.gdx2d.desktop.PortableApplication
@@ -6,10 +20,17 @@ import ch.hevs.gdx2d.lib.GdxGraphics
 import com.badlogic.gdx.graphics.Color
 import ch.hevs.gdx2d.lib.utils.Logger
 
-// ==== ÉNUMÉRATION DES ÉTATS ====
+// ==== ÉNUMÉRATION DES ÉTATS DE L'APPLICATION ====
+/**
+ * États possibles de l'application pour la navigation entre écrans.
+ * Chaque état correspond à un écran différent du jeu.
+ */
 object AppState extends Enumeration {
   type AppState = Value
-  val MENU, GAME, OPTIONS = Value
+  val MENU,      // Menu principal avec Start/Options/Credits/Quit
+      GAME,      // Jeu principal avec joueur, ennemis, projectiles
+      OPTIONS,   // Écran de configuration (audio, contrôles)
+      CREDITS = Value // Écran des crédits et informations développeurs
 }
 
 
@@ -38,8 +59,9 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
 
   // Instances des différents écrans
   private var menu: MystisMainMenu = _
-  private var game: Game = _
+  private var game: MystisGameMenu = _
   private var options: MystisOptionsMenu = _
+  private var credits: MystisCreditsMenu = _
 
   override def onInit(): Unit = {
     setTitle("Mystis Game")
@@ -62,14 +84,23 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
         AudioManager.startMenuMusic()
 
       case AppState.GAME =>
-        game = new Game(this)
-        game.onInit()
-        // La musique de gameplay est démarrée dans Game.onInit()
+        // Ne créer une nouvelle instance que si elle n'existe pas déjà
+        if (game == null) {
+          game = new MystisGameMenu(this)
+          game.onInit()
+          // La musique de gameplay est démarrée dans Game.onInit()
+        }
+        // Si le jeu existe déjà, on reprend simplement où on en était
 
       case AppState.OPTIONS =>
         options = new MystisOptionsMenu(this)
         options.onInit()
         // Les options ne changent pas la musique - elle continue selon l'état précédent
+        
+      case AppState.CREDITS =>
+        credits = new MystisCreditsMenu(this)
+        credits.onInit()
+        // Les crédits ne changent pas la musique - elle continue selon l'état précédent
     }
     stateChanged = false
   }
@@ -83,17 +114,21 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
   override def onGraphicRender(g: GdxGraphics): Unit = {
     // Vérifier changement d'état
     if (stateChanged && nextState.isDefined) {
-      // Nettoyer l'état précédent
+      // Nettoyer l'état précédent (sauf le jeu en cours pour préserver l'état)
       currentState match {
         case AppState.MENU if menu != null =>
           menu.dispose()
           menu = null
         case AppState.GAME if game != null =>
-          game.dispose()
-          game = null
+          // NE PAS dispose le jeu - le garder en mémoire pour reprendre
+          // game.dispose()
+          // game = null
         case AppState.OPTIONS if options != null =>
           options.dispose()
           options = null
+        case AppState.CREDITS if credits != null =>
+          credits.dispose()
+          credits = null
       }
 
       currentState = nextState.get
@@ -109,6 +144,8 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
         game.onGraphicRender(g)
       case AppState.OPTIONS if options != null =>
         options.onGraphicRender(g)
+      case AppState.CREDITS if credits != null =>
+        credits.onGraphicRender(g)
     }
   }
 
@@ -120,6 +157,8 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
         game.onKeyDown(keycode)
       case AppState.OPTIONS if options != null =>
         options.onKeyDown(keycode)
+      case AppState.CREDITS if credits != null =>
+        // Credits menu handles input internally
     }
   }
 
@@ -140,6 +179,10 @@ class MystisUnifiedApp extends PortableApplication(1920, 1080) {
     if (options != null) {
       options.dispose()
       options = null
+    }
+    if (credits != null) {
+      credits.dispose()
+      credits = null
     }
 
     super.onDispose()

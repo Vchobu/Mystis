@@ -18,14 +18,14 @@ object GameSettings {
   var playerCurrentHP: Float = 100f
   var playerMaxHP: Float = 100f
   var playerDamage: Float = 2.0f
-  var playerSpeed: Float = 3f
+  var playerSpeed: Float = 5f
   var playerSize: Float = 20f
 
   var enemyHP: Float = 3.0f
   var enemyDamage: Float = 1.5f
   var enemySpeed: Float = 1f
   var enemySize: Float = 30f
-  var enemyLimit: Int = 10
+  var enemyLimit: Int = 25
   var enemySpawnMinDistance: Float = 800f
 
   var repelFromPlayerRadius: Float = 50f
@@ -36,6 +36,11 @@ object GameSettings {
   var projectileSize: Float = 5f
   var projectileShootRange: Float = 300f
   var projectileTimeSinceLastShot: Float = 0f
+
+  // === BONUS SYSTEM VARIABLES ===
+  var criticalChance: Float = 0.0f
+  var healthRegenRate: Float = 0.0f
+  var multiShotEnabled: Boolean = false
 
   // === OPTIONS PARAMETERS ===
   var masterVolume: Float = 0.8f
@@ -59,7 +64,7 @@ object GameSettings {
     var moveDown: (Int, Int) = (Input.Keys.S, Input.Keys.DOWN)
     var moveLeft: (Int, Int) = (Input.Keys.A, Input.Keys.LEFT)
     var moveRight: (Int, Int) = (Input.Keys.D, Input.Keys.RIGHT)
-    var ultimate: (Int, Int) = (Input.Keys.SPACE, Input.Keys.NUMPAD_0) // Ultimate ability
+    var ultimate: (Int, Int) = (Input.Keys.SPACE, Input.Keys.X)
     var menu: (Int, Int) = (Input.Keys.ESCAPE, Input.Keys.B)
     
     // Bonus selection keys
@@ -119,5 +124,19 @@ object GameSettings {
         case _ => Input.Keys.toString(keycode)
       }
     }
+  }
+  // Maplimit
+  var worldMinX: Float = -1500f  // Limite gauche
+  var worldMaxX: Float = 3500f   // Limite droite
+  var worldMinY: Float = -1000f  // Limite bas
+  var worldMaxY: Float = 2500f   // Limite haut
+  
+  // Method to update world boundaries based on map dimensions
+  def updateWorldBounds(minX: Float, minY: Float, maxX: Float, maxY: Float): Unit = {
+    worldMinX = minX
+    worldMinY = minY
+    worldMaxX = maxX
+    worldMaxY = maxY
+    println(s"World bounds updated: ($minX, $minY) to ($maxX, $maxY)")
   }
 }

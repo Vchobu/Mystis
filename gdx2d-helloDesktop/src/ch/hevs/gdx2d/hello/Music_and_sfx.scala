@@ -1,6 +1,8 @@
 package ch.hevs.gdx2d.hello
 
 import ch.hevs.gdx2d.components.audio.MusicPlayer
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.audio.Sound
 
 /**
  * Gestionnaire audio simplifié pour Mystis
@@ -16,6 +18,12 @@ object AudioManager {
   private var lastMusicType: String = "menu" // Mémoriser le dernier type pour le toggle
   private var isMusicInitialized = false
   
+  // Sons d'effets
+  private var shootSound: Sound = _
+  private var killSound: Sound = _
+  private var ultimateSound: Sound = _
+  private var areSFXInitialized = false
+  
   // Contrôles ON/OFF simples - initialisés depuis GameSettings
   private var musicEnabled: Boolean = true
   private var sfxEnabled: Boolean = true
@@ -30,9 +38,15 @@ object AudioManager {
       sfxEnabled = GameSettings.sfxEnabled
       
       // Charger les musiques Ori and the Will of the Wisps
-      menuMusic = new MusicPlayer("gdx2d-helloDesktop/data/Soundtrack/Ori and the Will of the Wisps - Soundtrack - Main Theme_and_A Yearning for the Sky.mp3.wav")
-      gameplayMusic = new MusicPlayer("gdx2d-helloDesktop/data/Soundtrack/Ori and the Will of the Wisps - Soundtrack - Escaping a Foul Presence.mp3_and_Shriek and Ori.wav")
+      menuMusic = new MusicPlayer("gdx2d-helloDesktop/data/Soundtrack/OST/Ori and the Will of the Wisps - Soundtrack - Main Theme_and_A Yearning for the Sky.wav")
+      gameplayMusic = new MusicPlayer("gdx2d-helloDesktop/data/Soundtrack/OST/Ori and the Will of the Wisps - Soundtrack - Escaping a Foul Presence_and_Shriek and Ori.wav")
       isMusicInitialized = true
+      
+      // Charger les sons d'effets
+      shootSound = Gdx.audio.newSound(Gdx.files.internal("gdx2d-helloDesktop/data/Soundtrack/SFX/[SHOOT]-uppbeat-magic-spell-sparkle-blast-epic-stock-media.wav"))
+      killSound = Gdx.audio.newSound(Gdx.files.internal("gdx2d-helloDesktop/data/Soundtrack/SFX/[KILL]-uppbeat-magic-spell-light-magic-epic-stock-media.wav"))
+      ultimateSound = Gdx.audio.newSound(Gdx.files.internal("gdx2d-helloDesktop/data/Soundtrack/SFX/[ULT]-uppbeat-magic-impact-bosnow-1-00-01.wav"))
+      areSFXInitialized = true
       
       println(s"🎵 AudioManager initialisé - Musique: ${if (musicEnabled) "ON" else "OFF"}, SFX: ${if (sfxEnabled) "ON" else "OFF"}")
       
@@ -40,6 +54,7 @@ object AudioManager {
       case e: Exception =>
         println(s"Erreur lors du chargement audio: ${e.getMessage}")
         isMusicInitialized = false
+        areSFXInitialized = false
     }
   }
   
@@ -167,14 +182,24 @@ object AudioManager {
   
   // Sons d'effets - vérifient si SFX activés
   def playKillSound(): Unit = {
-    if (sfxEnabled) {
-      println("🎵 *Son de kill* (pas de fichier SFX)")
+    if (sfxEnabled && areSFXInitialized && killSound != null) {
+      try {
+        killSound.play(0.4f) // Volume à 40% pour bien entendre les kills
+      } catch {
+        case e: Exception =>
+          println(s"Erreur lors du son de kill: ${e.getMessage}")
+      }
     }
   }
   
   def playUltimateSound(): Unit = {
-    if (sfxEnabled) {
-      println("🎵 *Son d'ultimate* (pas de fichier SFX)")
+    if (sfxEnabled && areSFXInitialized && ultimateSound != null) {
+      try {
+        ultimateSound.play(0.6f) // Volume à 60% pour l'ultimate (plus fort)
+      } catch {
+        case e: Exception =>
+          println(s"Erreur lors du son d'ultimate: ${e.getMessage}")
+      }
     }
   }
   
@@ -196,6 +221,17 @@ object AudioManager {
     }
   }
   
+  def playShootSound(): Unit = {
+    if (sfxEnabled && areSFXInitialized && shootSound != null) {
+      try {
+        shootSound.play(0.3f) // Volume à 30% pour ne pas couvrir la musique
+      } catch {
+        case e: Exception =>
+          println(s"Erreur lors du son de tir: ${e.getMessage}")
+      }
+    }
+  }
+  
   /**
    * Nettoie les ressources audio
    */
@@ -212,9 +248,23 @@ object AudioManager {
         gameplayMusic = null
       }
       
+      if (shootSound != null) {
+        shootSound.dispose()
+        shootSound = null
+      }
+      if (killSound != null) {
+        killSound.dispose()
+        killSound = null
+      }
+      if (ultimateSound != null) {
+        ultimateSound.dispose()
+        ultimateSound = null
+      }
+      
       currentMusic = null
       currentMusicType = "none"
       isMusicInitialized = false
+      areSFXInitialized = false
       
       println("🎵 AudioManager nettoyé")
     } catch {
